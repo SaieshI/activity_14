@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
+import 'package:firebase_app_installations/firebase_app_installations.dart';
 
 Future<void> _messageHandler(RemoteMessage message) async {
   print('background message ${message.notification!.body}');
@@ -9,9 +10,7 @@ Future<void> _messageHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_messageHandler);
   runApp(MessagingTutorial());
 }
@@ -22,9 +21,7 @@ class MessagingTutorial extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Firebase Messaging',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: MyHomePage(title: 'Firebase Messaging'),
     );
   }
@@ -42,23 +39,41 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late FirebaseMessaging messaging;
   String? notificationText;
+
   @override
   void initState() {
     super.initState();
+
     messaging = FirebaseMessaging.instance;
     messaging.subscribeToTopic("messaging");
     messaging.getToken().then((value) {
-      print(value);
+      print('FCM Token: $value');
     });
+
+    FirebaseInstallations.instance.getId().then((installationID) {
+      print('Installation ID: $installationID');
+    });
+
     FirebaseMessaging.onMessage.listen((RemoteMessage event) {
       print("message recieved");
       print(event.notification!.body);
-      print(event.data.values);
+      print(event.data);
+      String type = event.data['notificationType'] ?? 'regular';
+      Color? backgroundColor;
+      String textTitle;
+      if (type == 'important') {
+        backgroundColor = Colors.red;
+        textTitle = 'Importnat Notification';
+      } else {
+        backgroundColor = Colors.blue;
+        textTitle = 'Regular Notification';
+      }
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text("Notification"),
+            backgroundColor: backgroundColor,
+            title: Text(textTitle),
             content: Text(event.notification!.body!),
             actions: [
               TextButton(
@@ -66,10 +81,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-              )
+              ),
             ],
           );
-        });
+        },
+      );
     });
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       print('Message clicked!');
@@ -79,9 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title!),
-      ),
+      appBar: AppBar(title: Text(widget.title!)),
       body: Center(child: Text("Messaging Tutorial")),
     );
   }
