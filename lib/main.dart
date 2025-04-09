@@ -39,6 +39,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late FirebaseMessaging messaging;
   String? notificationText;
+  List<String> notifications = [];
 
   @override
   void initState() {
@@ -96,7 +97,21 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(widget.title!)),
-      body: Center(child: Text("Messaging Tutorial")),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Cloud Messaging Tutorial'),
+            SizedBox(height: 20),
+            ...notifications.map((message) {
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(message, style: TextStyle(fontSize: 16)),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
     );
   }
 }
